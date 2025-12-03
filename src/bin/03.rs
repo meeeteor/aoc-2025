@@ -1,11 +1,9 @@
-use advent_of_code::template::aoc_cli::check;
-
 advent_of_code::solution!(3);
 
 pub fn part_one(input: &str) -> Option<u64> {
-    let sum = input.lines().fold(0, |acc, line| {
-        let (l, r) = line.chars().rfold((0,0), |(l,r), c| {
-            let Some(digit) = c.to_digit(10) else { panic!("not a digit") };
+    let sum = input.lines().fold(0u32, |acc, line| {
+        let (l, r) = line.bytes().rfold((0,0), |(l,r), b| {
+            let digit = (b - b'0') as u32;
 
             // First candidate is simply the two right-most digits
             if r == 0 { return (digit, l); }
@@ -33,44 +31,50 @@ const POWERS: [u64; 12] = [
     1_000_000, 10_000_000, 100_000_000,
     1_000_000_000, 10_000_000_000, 100_000_000_000,
 ];
+
 pub fn part_two(input: &str) -> Option<u64> {
-    let sum = input.lines().fold(0, |mut acc, line| {
-        let digits = line.chars().rfold(vec![], |mut digits : Vec<_>, char| {
-            let Some(digit) = char.to_digit(10) else { panic!("not a digit") };
+    let mut sum = 0u64;
+
+    for line in input.lines() {
+        let mut digits = [0u32; 12];
+        let mut len = 0usize;
+
+        for byte in line.bytes().rev() {
+            let digit = (byte - b'0') as u32;
 
             // First, get a first solution
-            if digits.len() < 12 {
-                digits.push(digit); // last element is left-most!
-                return digits;
+            if len < 12 {
+                digits[len] = digit;
+                len += 1;
+                continue;
             }
 
             // For each next solution, check from left to right:
             // If the digit is larger: append, continue for the replaced digit instead.
             let mut checking = digit;
-            for index in (0..=11).rev() {
+            for index in (0..12).rev() {
                 let current = digits[index];
 
-                if checking < current {
-                    break;
-                }
-                if checking == current {
+                if checking <= current {
+                    if checking < current {
+                        break;
+                    }
+                    // checking == current, continue
                     continue;
                 }
-                if checking > current {
-                    std::mem::swap(&mut checking, &mut digits[index]);
-                    continue;
-                }
+
+                // checking > current
+                std::mem::swap(&mut checking, &mut digits[index]);
             }
-
-            digits
-        });
-
-        for i in 0..12 {
-            acc += (digits[i] as u64) * POWERS[i];
         }
-        acc
-    });
-    Some(sum as u64)
+
+        // Unroll or use array indexing directly
+        for i in 0..12 {
+            sum += (digits[i] as u64) * POWERS[i];
+        }
+    }
+
+    Some(sum)
 }
 
 #[cfg(test)]
