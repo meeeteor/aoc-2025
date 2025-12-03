@@ -9,13 +9,13 @@ pub fn part_one(input: &str) -> Option<u64> {
         .map(|c| c.extract())
         .map(|(_,[start,end])| (start.parse::<u64>().unwrap(), end.parse::<u64>().unwrap()))
     {
-        for n in start..=end {
-            let str_n: String = n.to_string();
-            if str_n.len() % 2 == 1 { continue; }
+        for num in start..=end {
+            let n_digits = num.ilog10() + 1;
+            if n_digits % 2 == 1 { continue; }
 
-            let (left, right) = str_n.as_str().split_at(str_n.len() / 2);
-            if left == right {
-                total += n;
+            let divisor = 10u64.pow(n_digits/2);
+            if num / divisor == num % divisor {
+                total += num;
             }
         }
     }
@@ -29,22 +29,26 @@ pub fn part_two(input: &str) -> Option<u64> {
         .map(|c| c.extract())
         .map(|(_,[start,end])| (start.parse::<u64>().unwrap(), end.parse::<u64>().unwrap()))
     {
-        for n in start..=end {
-            let str_n: String = n.to_string();
+        for num in start..=end {
+            let n_digits = num.ilog10() + 1;
 
-            let divisors: Vec<usize> = (1..=str_n.len()/2).filter(|x| str_n.len() % x == 0).collect();
 
-            for divisor in divisors {
-                let mut chunks = str_n.as_bytes().chunks_exact(divisor);
-                if let Some(fst) = chunks.next() {
-                    if chunks.all(|c| c == fst) {
-                        total += n;
-                        break;
+            'sizes: for chunk_size in (1..=n_digits/2).filter(|&x|n_digits%x==0) {
+                let chunk_count = n_digits / chunk_size;
+                let div = 10u64.pow(chunk_size);
+
+                let first = num % div;
+                let mut tmp = num / div;
+                for _ in 1..chunk_count {
+                    if tmp % div != first {
+                        continue 'sizes;
                     }
+                    tmp /= div;
                 }
+                total += num;
+                break 'sizes;
             }
         }
-
     }
 
     Some(total)
