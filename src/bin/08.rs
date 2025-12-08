@@ -22,6 +22,9 @@ impl Point {
 }
 
 pub fn part_one(input: &str) -> Option<u64> {
+    part_one_h(input, 1000)
+}
+pub fn part_one_h(input: &str, n_iterations: usize) -> Option<u64> {
     let mut points = parse_input(input);
 
     let mut pairs: Vec<_> = (0..points.len()).tuple_combinations::<(_, _)>().collect();
@@ -33,7 +36,7 @@ pub fn part_one(input: &str) -> Option<u64> {
     });
 
     let mut next_network_id = 1;
-    for i in 0..1000 {
+    for i in 0..n_iterations {
         connect_pair(i, &pairs, &mut points, &mut next_network_id);
     }
 
@@ -44,6 +47,32 @@ pub fn part_one(input: &str) -> Option<u64> {
 
     Some((networks[0] * networks[1] * networks[2]) as u64)
 }
+pub fn part_two(input: &str) -> Option<u64> {
+    let mut points = parse_input(input);
+    let mut pairs: Vec<_> = (0..points.len()).tuple_combinations::<(_, _)>().collect();
+
+    pairs.sort_by(|(i1, j1), (i2, j2)| {
+        let d1 = points[*i1].distance(&points[*j1]);
+        let d2 = points[*i2].distance(&points[*j2]);
+        d1.partial_cmp(&d2).unwrap()
+    });
+
+    let mut next_network_id = 1;
+    let mut idx = 0;
+    loop {
+        connect_pair(idx, &pairs, &mut points, &mut next_network_id);
+        if points.iter().all(|p| p.network.is_some() && p.network == points[0].network) {
+            break;
+        }
+        idx += 1;
+    }
+
+    let (i1, i2) = pairs[idx];
+
+    Some((points[i1].x * points[i2].x) as u64)
+}
+
+
 
 fn connect_pair(
     idx: usize,
@@ -86,30 +115,6 @@ fn parse_input(input: &str) -> Vec<Point> {
     points
 }
 
-pub fn part_two(input: &str) -> Option<u64> {
-    let mut points = parse_input(input);
-    let mut pairs: Vec<_> = (0..points.len()).tuple_combinations::<(_, _)>().collect();
-
-    pairs.sort_by(|(i1, j1), (i2, j2)| {
-        let d1 = points[*i1].distance(&points[*j1]);
-        let d2 = points[*i2].distance(&points[*j2]);
-        d1.partial_cmp(&d2).unwrap()
-    });
-
-    let mut next_network_id = 1;
-    let mut idx = 0;
-    loop {
-        connect_pair(idx, &pairs, &mut points, &mut next_network_id);
-        if points.iter().all(|p| p.network.is_some() && p.network == points[0].network) {
-            break;
-        }
-        idx += 1;
-    }
-
-    let (i1, i2) = pairs[idx];
-
-    Some((points[i1].x * points[i2].x) as u64)
-}
 
 #[cfg(test)]
 mod tests {
@@ -117,7 +122,7 @@ mod tests {
 
     #[test]
     fn test_part_one() {
-        let result = part_one(&advent_of_code::template::read_file("examples", DAY));
+        let result = part_one_h(&advent_of_code::template::read_file("examples", DAY), 10);
         assert_eq!(result, Some(40));
     }
 
